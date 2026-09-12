@@ -2,21 +2,22 @@ const express = require("express");
 
 const app = express();
 
-const { adminAuth,userAuth } = require("./middlewares/auth");
-
-//handle auth middleware for all request get post patch put etc .all also work
-app.use("/admin", adminAuth);
-
-app.get("/user",userAuth, (req, res) => {
-  res.send("user data Sent");
+app.get("/getUserData", (req, res) => {
+  try {
+    //logic of db call adn get user data
+    throw new Error("sdjkasjf");
+    res.send("user data sent");
+  } catch (err) {
+    res.status(500).send("some error contact support team");
+  }
 });
 
-app.get("/admin/getAllData", (req, res) => {
-  res.send("All Data Sent");
-});
-
-app.get("/admin/deleteUser", (req, res) => {
-  res.send("Deleted a user");
+app.use("/", (err, req, res, next) => {
+  if (err) {
+    //also log errors
+    res.status(500).send("something went wrong");
+  }
+  //good way is to use try catch only in that same route handler
 });
 
 app.listen(3002, () => {
