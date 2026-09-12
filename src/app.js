@@ -1,24 +1,36 @@
 const express = require("express");
+const { connectDb } = require("./config/db");
+const User = require("./models/user");
 
 const app = express();
 
-app.get("/getUserData", (req, res) => {
+app.post("/signup", async (req, res) => {
+  const userObj = {
+    firstName: "MY",
+    lastName: "Kholi",
+    emailId: "vk@232gmai.com",
+    password: "vk12",
+  };
+  //creating a new instance of the user model
+  const user = new User(userObj);
+
   try {
-    //logic of db call adn get user data
-    throw new Error("sdjkasjf");
-    res.send("user data sent");
+    await user.save();
+
+    // res.send("user added successfully")
+    res.send(userObj);
   } catch (err) {
-    res.status(500).send("some error contact support team");
+    res.status(400).send("error saving user");
   }
 });
 
-app.use("/", (err, req, res, next) => {
-  if (err) {
-    //also log errors
-    res.status(500).send("something went wrong");
-  }
-  //good way is to use try catch only in that same route handler
-});
+connectDb()
+  .then(() => {
+    console.log("database connected successfully");
+  })
+  .catch((err) => {
+    console.log("database can not be connected");
+  });
 
 app.listen(3002, () => {
   console.log("Server is successfully listening on port 3002...");
