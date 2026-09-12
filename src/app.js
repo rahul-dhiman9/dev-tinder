@@ -2,40 +2,23 @@ const express = require("express");
 
 const app = express();
 
-// app.use("/user",(req,res)=>{
-//   //route handler
-//   res.send("router 1")
-// })
+const { adminAuth,userAuth } = require("./middlewares/auth");
 
-app.use(
-  "/user",
-  (req, res, next) => {
-    //route handler1
-    console.log("handler the route user 1");
-    next();
-    // res.send("router 1");
-  },
-  [(req, res, next) => {
-    console.log("handler the route user 2");
-    //route handler
-    next();
-    // res.send("router 2");
-  },
-  (req, res, next) => {
-    console.log("handler the route user 3");
-    //route handler
-    res.send("router 3");
-    next()
-  }],
-    (req, res, next) => {
-    console.log("handler the route user 3");
-    //route handler
-    // res.send("router 4");
-    next()
-  },
-);
-//output above is router1 in postman, cause line by line v8 sync code h na hang hojega agr res nahi bhejoge first route m , krna h hi 2 print toh next() use kro
+//handle auth middleware for all request get post patch put etc .all also work
+app.use("/admin", adminAuth);
+
+app.get("/user",userAuth, (req, res) => {
+  res.send("user data Sent");
+});
+
+app.get("/admin/getAllData", (req, res) => {
+  res.send("All Data Sent");
+});
+
+app.get("/admin/deleteUser", (req, res) => {
+  res.send("Deleted a user");
+});
 
 app.listen(3002, () => {
-  console.log("server is started");
+  console.log("Server is successfully listening on port 3002...");
 });
