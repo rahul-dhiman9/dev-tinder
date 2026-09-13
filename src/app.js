@@ -1,6 +1,9 @@
 const express = require("express");
 const { connectDb } = require("./config/db");
 const User = require("./models/user");
+const validator = require("validator");
+const validateSignUpData = require("./utils/validation");
+const bcrypt = require("bcrypt");
 
 const app = express();
 
@@ -10,19 +13,58 @@ app.use(express.urlencoded());
 //Parses requests with URL‑encoded payloads (like HTML form submissions),handles form submissions with x-www-form-urlencoded.
 
 app.post("/signup", async (req, res) => {
-    console.log(req.body);
-
-  //creating a new instance of the user model
-  const user = new User(req.body);
-
   try {
+    await validateSignUpData(req);
+
+    const { firstName, emailId, password, lastName, photoUrl, age } = req.body;
+
+    //encrypt the password
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    // Save new user
+    const user = new User({
+      firstName: firstName,
+      lastName: lastName,
+      age: age,
+      emailId: emailId,
+      password: passwordHash,
+      photoUrl: photoUrl,
+    });
     await user.save();
 
-    res.send("user added successfully")
-    res.send(userObj);
-
+    res.status(201).json({
+      message: "User added successfully",
+      user,
+    });
   } catch (err) {
-    res.status(400).send("error saving user");
+    console.error(err);
+    res.status(500).send("error  " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+
+    if (!emailId || !password || !validator.isEmail(emailId)) {
+      return res.send("email id or password is wrong");
+    }
+
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      return res.send("invalid credentials");
+    }
+    const userPassword = user.password;
+    const isPasswordValid = await bcrypt.compare(password, userPassword);
+    if (!isPasswordValid) {
+      return res.send("email id or password is wrong");
+    }
+
+    // Login successful
+    res.send("Login successful");
+  } catch (err) {
+    res.status(500).send("error  " + err.message);
   }
 });
 
@@ -90,19 +132,30 @@ app.delete("/user", async (req, res) => {
 });
 
 //updating the data of the user
-app.patch("/user", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/user/:userId", async (req, res) => {
+  const userId = req.params?.userId;
   const data = req.body;
+  const AllowedUpdates = ["photUrl", "about", "gender", "age", "skills"];
+  const isUpdateAllowed = Object.keys(data).every((key) =>
+    AllowedUpdates.includes(key),
+  );
+  if (!isUpdateAllowed) {
+    return res.status(400).send("Update not allowed");
+  }
+  if (data?.skills.length > 10) {
+    throw new Error("skills can not be more than 10");
+  }
   try {
-    const updateduser = await User.findByIdAndUpdate(userId , data,{
-      returnDocument:"after",
-      runValidators:true
+    const updateduser = await User.findByIdAndUpdate(userId, data, {
+      returnDocument: "after",
+      runValidators: true,
     });
     res.send("updated successfully");
     console.log(updateduser);
-    
   } catch (err) {
-    res.status(400).send("error updating user");
+    res
+      .status(400)
+      .send({ message: "error updating user", error: err.message });
   }
 });
 
