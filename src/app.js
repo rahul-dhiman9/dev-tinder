@@ -4,13 +4,18 @@ const User = require("./models/user");
 const validator = require("validator");
 const validateSignUpData = require("./utils/validation");
 const bcrypt = require("bcrypt");
-
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 const app = express();
 
 app.use(express.json());
 // Parses requests with JSON payloads.,Express will automatically convert that JSON into a JavaScript object
 app.use(express.urlencoded());
 //Parses requests with URL‑encoded payloads (like HTML form submissions),handles form submissions with x-www-form-urlencoded.
+
+app.use(cookieParser());
+// Reads cookies sent by the browser and makes them accessible in Express via req.cookies
 
 app.post("/signup", async (req, res) => {
   try {
@@ -55,17 +60,44 @@ app.post("/login", async (req, res) => {
     if (!user) {
       return res.send("invalid credentials");
     }
-    const userPassword = user.password;
-    const isPasswordValid = await bcrypt.compare(password, userPassword);
+  
+    const isPasswordValid = await user.validatePassword(password)
+
     if (!isPasswordValid) {
       return res.send("email id or password is wrong");
     }
+
+    //create a jwt token
+    const token = await user.getJWT();
+
+    //add the token to cookie and send the response back to the user
+    res.cookie("token", token, {
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
     // Login successful
     res.send("Login successful");
   } catch (err) {
     res.status(500).send("error  " + err.message);
   }
+});
+
+app.get("/profile", userAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    res.send(user);
+  } catch (err) {
+    res.status(500).send("error  " + err.message);
+  }
+});
+
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  const user = req.user;
+  //sending connection request
+  console.log("sending connection request");
+
+  res.send("send by " + user.firstName);
 });
 
 // //feed api get /feed get all the users from the db
