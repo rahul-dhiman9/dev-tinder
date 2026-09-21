@@ -1,11 +1,11 @@
 const mongoose = require("mongoose");
+require("dotenv").config();
 
+const uri = process.env.DB_URL;
 const connectDb = async () => {
-  await mongoose.connect(
-    "mongodb://rahul:rahul23@ac-d1u8wwg-shard-00-00.mnst93m.mongodb.net:27017,ac-d1u8wwg-shard-00-01.mnst93m.mongodb.net:27017,ac-d1u8wwg-shard-00-02.mnst93m.mongodb.net:27017/devTinder?ssl=true&replicaSet=atlas-tw545c-shard-0&authSource=admin&appName=Cluster0",
-  );
+  await mongoose.connect(uri);
 };
 
 module.exports = {
-  connectDb
+  connectDb,
 };

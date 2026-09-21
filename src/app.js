@@ -15,9 +15,11 @@ const userRouter = require("./routes/user");
 const cors = require("cors");
 const path = require("path");
 
+
+
 require("dotenv").config();
 
-//multer ke liye
+//multer ke liye,  Serve files from the local uploads folder at /uploads/<filename>
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 app.use(
