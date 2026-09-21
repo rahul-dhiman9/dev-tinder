@@ -26,4 +26,20 @@ const validateSignUpData = async (req) => {
   }
 };
 
-module.exports = validateSignUpData;
+const validateEditProfileData = (req) => {
+    if (!req.body || typeof req.body !== "object") return false;
+  const allowedEditFields = [
+    "firstName",
+    "lastName",
+    "emailId",
+    "photoUrl",
+    "age",
+    "gender",
+    "about",
+    "skills",
+  ];  
+ const isEditAllowed =  Object.keys(req.body).every(field=>allowedEditFields.includes(field))
+ return isEditAllowed
+};
+
+module.exports = { validateSignUpData, validateEditProfileData };

@@ -7,7 +7,7 @@ const userAuth = async (req, res, next) => {
     const cookies = req.cookies;
     const { token } = cookies;
     if(!token){
-      throw new Error("Token is not valid")
+     return res.status(401).send("You are not logged in ,please login")
     }
     //validate the token and find the token of that user exist and user exists or not
     const decodedDataObj = await jwt.verify(token, "DEV@12121313");

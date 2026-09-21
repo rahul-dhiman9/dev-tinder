@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 const userSchema = mongoose.Schema(
   {
@@ -18,7 +18,7 @@ const userSchema = mongoose.Schema(
     },
     emailId: {
       type: String,
-      unique:true,
+      unique: true,
       required: true,
       lowercase: true,
       trim: true,
@@ -30,12 +30,8 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
+      select:false,
       required: true,
-      validate(value) {
-        if (!validator.isStrongPassword(value, { minLength: 8 })) {
-          throw new Error("Password is too weak");
-        }
-      },
     },
     age: {
       min: 18,
@@ -43,22 +39,21 @@ const userSchema = mongoose.Schema(
       type: Number,
     },
     gender: {
-      validate(value) {
-        if (!["male", "female", "others"].includes(value)) {
-          throw new Error("gender is not specified", err.message);
-        }
-      },
       type: String,
+      enum: {
+        values: ["male", "female", "others"],
+        message: `{VALUE} it is not supported gender type`,
+      },
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error("gender is not specified", err.message);
+      //   }
+      // },
     },
     photoUrl: {
       type: String,
       default:
         "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTro-iMp3rwLVEqt6I6NyOlW4JpSkSezwVXo1xiLPGSMQ&s=10",
-         validate(value) {
-      if (!validator.isURL(value)) {
-        throw new Error("Invalid photo URL");
-      }
-    }
     },
     about: {
       type: String,
@@ -68,8 +63,12 @@ const userSchema = mongoose.Schema(
     },
     skills: {
       type: [String],
-      minLength: 20,
-      maxLength: 200,
+      validate: {
+        validator: function (value) {
+          return value.length <= 10;
+        },
+        message: "Skills cannot have more than 10 items",
+      },
     },
   },
   {
@@ -78,19 +77,23 @@ const userSchema = mongoose.Schema(
 );
 
 
-userSchema.methods.getJWT = async function(){
-  const user = this;
-   const token = await jwt.sign({ _id:user._id }, "DEV@12121313", {
-      expiresIn: "1d",  
-    });
-    return token
-}
+userSchema.index({firstName:1,lastName:1})
 
-userSchema.methods.validatePassword=async function(passwordByUser){
+userSchema.methods.getJWT = async function () {
   const user = this;
-  const isPasswordValid = await bcrypt.compare(passwordByUser, user.password)
-    return isPasswordValid;
-}
+  const token = await jwt.sign({ _id: user._id }, "DEV@12121313", {
+    expiresIn: "1d",
+  });
+  return token;
+};
+
+
+
+userSchema.methods.validatePassword = async function (passwordByUser) {
+  const user = this;
+  const isPasswordValid = await bcrypt.compare(passwordByUser, user.password);
+  return isPasswordValid;
+};
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
