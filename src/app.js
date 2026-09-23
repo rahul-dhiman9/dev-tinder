@@ -14,10 +14,40 @@ const requestRouter = require("./routes/requests");
 const userRouter = require("./routes/user");
 const cors = require("cors");
 const path = require("path");
-
+const sendEmail = require("./utils/sendEmail");
 
 
 require("dotenv").config();
+const PORT = process.env.PORT 
+
+app.get("/test-email", async (req, res) => {
+  try {
+    const response = await sendEmail({
+      to: "raadevelopedit@gmail.com",
+      subject: "DevTinder SES Test",
+      text: "Hello! AWS SES is working.",
+      html: `
+        <h2>DevTinder SES Test</h2>
+        <p>Hello! AWS SES is working successfully.</p>
+      `,
+    });
+
+    console.log("SES response:", response);
+
+    res.json({
+      message: "Email sent successfully",
+      response,
+    });
+  } catch (error) {
+    console.error("SES email failed:", error);
+
+    res.status(500).json({
+      message: "Email failed",
+      error: error.message,
+    });
+  }
+});
+
 
 //multer ke liye,  Serve files from the local uploads folder at /uploads/<filename>
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
@@ -140,8 +170,8 @@ connectDb()
   .then(() => {
     console.log("database connected successfully");
 
-    app.listen(3002, () => {
-      console.log("Server is successfully listening on port 3002...");
+    app.listen(PORT, () => {
+      console.log(`Server is successfully listening on port ${PORT}...`);
     });
   })
   .catch((err) => {

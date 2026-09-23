@@ -17,6 +17,9 @@
     "dev": "nodemon src/app.js"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1138.0",
+    "@aws-sdk/client-sesv2": "^3.1138.0",
+    "@aws-sdk/client-sts": "^3.1138.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",

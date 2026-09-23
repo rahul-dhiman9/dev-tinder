@@ -3,9 +3,7 @@ const { userAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionRequest");
 const User = require("../models/user");
 const requestRouter = express.Router();
-
-
-
+const sendEmail = require("../utils/sendEmail");
 
 requestRouter.post(
   "/request/send/:status/:toUserId",
@@ -52,6 +50,16 @@ requestRouter.post(
       });
 
       const data = await connectionRequest.save();
+
+      const response = await sendEmail({
+        to: "raadevelopedit@gmail.com",
+        subject: "SES Test",
+        text: "Testing AWS SES",
+      }).catch((err) => {
+        console.error("SES email failed:", err.message);
+      });
+      console.log(response);
+
       res.json({
         message: `${req.user.firstName} has ${status}  ${toUser.firstName}`,
         data,
@@ -61,11 +69,6 @@ requestRouter.post(
     }
   },
 );
-
-
-
-
-
 
 requestRouter.post(
   "/request/review/:status/:requestId",
