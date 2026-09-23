@@ -53,8 +53,13 @@ requestRouter.post(
 
       const response = await sendEmail({
         to: "raadevelopedit@gmail.com",
-        subject: "SES Test",
-        text: "Testing AWS SES",
+        subject: "New Friend Request on DevTinder",
+        text: `${req.user.firstName} sent you a friend request on DevTinder.`,
+        html: `
+    <h2>New Friend Request</h2>
+    <p><strong>${req.user.firstName}</strong> sent you a friend request on DevTinder.</p>
+    <p>Open DevTinder to review the request.</p>
+  `,
       }).catch((err) => {
         console.error("SES email failed:", err.message);
       });
