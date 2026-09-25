@@ -117,19 +117,48 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
       });
     }
 
-    // Update user after successful payment
     if (req.body.event === "payment.captured") {
+      const newMembership = payment.notes?.memberShipType;
+
+      if (!newMembership) {
+        return res.status(400).json({
+          message: "Membership type missing",
+        });
+      }
+
+      if (payment.userId.toString() !== user._id.toString()) {
+        return res.status(403).json({
+          message: "Payment does not belong to this user",
+        });
+      }
+
+      if (user.isPremium && user.memberShipType === "gold") {
+        return res.status(400).json({
+          message: "You already have a Gold membership",
+        });
+      }
+
+      if (
+        user.isPremium &&
+        user.memberShipType === "silver" &&
+        newMembership !== "gold"
+      ) {
+        return res.status(400).json({
+          message: "Silver members can only upgrade to Gold",
+        });
+      }
+
       user.isPremium = true;
-      user.memberShipType = payment.notes.memberShipType;
+      user.memberShipType = newMembership;
 
       await user.save();
     }
 
-    // if (req.body.event == "payment.captured") {
-    // }
-
-    // if (req.body.event == "payment.failed") {
-    // }
+    if (req.body.event === "payment.failed") {
+      return res.status(200).json({
+        msg: "Payment failure received",
+      });
+    }
 
     // Return success response to Razorpay
     return res.status(200).json({
@@ -142,6 +171,15 @@ paymentRouter.post("/payment/webhook", async (req, res) => {
       message: "Webhook processing failed",
     });
   }
+});
+
+paymentRouter.get("/premium/verify", userAuth, async (req, res) => {
+  const user = req.user;
+
+  return res.status(200).json({
+    isPremium: user.isPremium,
+    memberShipType: user.memberShipType || null,
+  });
 });
 
 module.exports = paymentRouter;
