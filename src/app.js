@@ -50,7 +50,7 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
-app.use("/api", paymentRouter);
+app.use("/", paymentRouter);
 
 // //feed api get /feed get all the users from the db
 // //get user by email
