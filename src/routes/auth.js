@@ -9,88 +9,77 @@ const fs = require("fs");
 
 const upload = require("../middlewares/multer");
 
-authRouter.post(
-  "/signup",
-  upload.single("photo"),
-  async (req, res) => {
-    try {
-      // Validate request
-      await validateSignUpData(req);
+authRouter.post("/signup", upload.single("photo"), async (req, res) => {
+  try {
+    // Validate request
+    await validateSignUpData(req);
 
-      // Get data from FormData
-      const {
-        firstName,
-        emailId,
-        password,
-        lastName,
-        age,
-        gender,
-        skills,
-        about,
-      } = req.body;
+    // Get data from FormData
+    const {
+      firstName,
+      emailId,
+      password,
+      lastName,
+      age,
+      gender,
+      skills,
+      about,
+    } = req.body;
 
-      // Hash password
-      const passwordHash = await bcrypt.hash(password, 10);
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
 
-      // Create user
-      const user = new User({
-        firstName,
-        lastName,
-        age,
-        gender,
-        emailId,
-        password: passwordHash,
-        skills,
-        about,
+    // Create user
+    const user = new User({
+      firstName,
+      lastName,
+      age,
+      gender,
+      emailId,
+      password: passwordHash,
+      skills,
+      about,
+    });
+
+    // Check if user uploaded a photo
+    if (req.file) {
+      // Upload Multer's temporary file to Cloudinary
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "devTinder/profile",
       });
 
-      // Check if user uploaded a photo
-      if (req.file) {
+      // Save Cloudinary URL in MongoDB
+      user.photoUrl = result.secure_url;
 
-        // Upload Multer's temporary file to Cloudinary
-        const result = await cloudinary.uploader.upload(
-          req.file.path,
-          {
-            folder: "devTinder/profile",
-          }
-        );
-
-        // Save Cloudinary URL in MongoDB
-        user.photoUrl = result.secure_url;
-
-        // Delete temporary file from your server
-        fs.unlinkSync(req.file.path);
-      }
-
-      // Save user
-      await user.save();
-
-      res.status(201).json({
-        message: "User added successfully",
-        data: user,
-      });
-
-    } catch (err) {
-
-      console.error("SIGNUP ERROR:", err);
-
-      // If Multer uploaded a file but Cloudinary/database failed,
-      // remove the temporary file
-      if (req.file) {
-        try {
-          fs.unlinkSync(req.file.path);
-        } catch (fileError) {
-          console.log("Temporary file cleanup failed");
-        }
-      }
-
-      res.status(400).json({
-        message: err.message,
-      });
+      // Delete temporary file from your server
+      fs.unlinkSync(req.file.path);
     }
-  }
-);
 
+    // Save user
+    await user.save();
+
+    res.status(201).json({
+      message: "User added successfully",
+      data: user,
+    });
+  } catch (err) {
+    console.error("SIGNUP ERROR:", err);
+
+    // If Multer uploaded a file but Cloudinary/database failed,
+    // remove the temporary file
+    if (req.file) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (fileError) {
+        console.log("Temporary file cleanup failed");
+      }
+    }
+
+    res.status(400).json({
+      message: err.message,
+    });
+  }
+});
 
 authRouter.post("/login", async (req, res) => {
   try {

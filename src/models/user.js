@@ -32,7 +32,7 @@ const userSchema = mongoose.Schema(
     },
     password: {
       type: String,
-      select:false,
+      select: false,
       required: true,
     },
     age: {
@@ -51,6 +51,13 @@ const userSchema = mongoose.Schema(
       //     throw new Error("gender is not specified", err.message);
       //   }
       // },
+    },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
+    memberShipType: {
+      type: String,
     },
     photoUrl: {
       type: String,
@@ -78,18 +85,15 @@ const userSchema = mongoose.Schema(
   },
 );
 
-
-userSchema.index({firstName:1,lastName:1})
+userSchema.index({ firstName: 1, lastName: 1 });
 
 userSchema.methods.getJWT = async function () {
   const user = this;
-  const token = await jwt.sign({ _id: user._id },  process.env.JWT_SECRET , {
+  const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET, {
     expiresIn: "1d",
   });
   return token;
 };
-
-
 
 userSchema.methods.validatePassword = async function (passwordByUser) {
   const user = this;

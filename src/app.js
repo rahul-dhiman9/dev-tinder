@@ -11,6 +11,7 @@ const app = express();
 const authRouter = require("./routes/auth");
 const profileRouter = require("./routes/profile");
 const requestRouter = require("./routes/requests");
+const paymentRouter = require("./routes/payment");
 const userRouter = require("./routes/user");
 const cors = require("cors");
 const path = require("path");
@@ -19,6 +20,8 @@ const path = require("path");
 
 require("dotenv").config();
 const PORT = process.env.PORT 
+
+require("./utils/cronJobs")
 
 
 
@@ -47,6 +50,7 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/", paymentRouter);
 
 // //feed api get /feed get all the users from the db
 // //get user by email
