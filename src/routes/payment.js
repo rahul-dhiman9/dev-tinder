@@ -47,42 +47,49 @@ paymentRouter.post("/payment/create", userAuth, async (req, res) => {
 });
 
 const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-paymentRouter.post("/payment/webhook", async () => {
-  try {
-    const webhookSignature = req.get["X-Razorpay-Signature"];
-    const isWebHookValid = validateWebhookSignature(
-      JSON.stringify(req.body),
-      webhookSignature,
-      webhookSecret,
-    );
-    if (!isWebHookValid) {
-      return res
-        .status(400)
-        .json({ message: "webhook signature is not valid" });
+// Because you're verifying Razorpay's signature, don't let express.json() consume the body first. express raw use When you use:express.raw({ type: "application/json" }) Express gives you: req.body as a Buffer.Then:req.body.toString() converts the Buffer back into the exact raw JSON string Razorpay sent
+paymentRouter.post(
+  "/payment/webhook",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    try {
+      const webhookSignature = req.get("X-Razorpay-Signature");
+      const isWebHookValid = validateWebhookSignature(
+        req.body.toString(),
+        webhookSignature,
+        webhookSecret,
+      );
+      if (!isWebHookValid) {
+        return res
+          .status(400)
+          .json({ message: "webhook signature is not valid" });
+      }
+
+      //update my payment status in db if webhook valid and update the user as premium
+
+      const paymentDetails = req.body.payload.payment.entity;
+      const payment = await Payment.findOne({
+        orderId: paymentDetails.order_id,
+      });
+      payment.status = paymentDetails.status;
+      await payment.save();
+      const user = await User.findOne({ _id: payment.userId });
+      user.isPremium = true;
+      user.memberShipType = payment.notes.membershipType;
+      await user.save();
+
+      // if (req.body.event == "payment.captured") {
+      // }
+
+      // if (req.body.event == "payment.failed") {
+      // }
+
+      //return success response to razorpay
+      return res.status(200).json({ msg: "webhook received successfully" });
+    } catch (err) {
+      console.error(err);
     }
-
-    //update my payment status in db if webhook valid and update the user as premium
-
-    const paymentDetails = req.body.payload.payment.entity
-    const payment = await Payment.findOne({orderId:paymentDetails.order_id}) 
-    payment.status = paymentDetails.status
-    await payment.save()
-    const user = await User.findOne({_id:payment.userId})
-    user.isPremium=true
-    user.memberShipType = payment.notes.membershipType
-    await user.save()
-
-    // if (req.body.event == "payment.captured") {
-    // }
-
-    // if (req.body.event == "payment.failed") {
-    // }
-
-    //return success response to razorpay
-    return res.status(200).json({ msg: "webhook received successfully" });
-  } catch (err) {
-    console.error(err);
-  }
-});
+  },
+);
 
 module.exports = paymentRouter;
